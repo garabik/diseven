@@ -1,0 +1,130 @@
+#!/usr/bin/python
+
+import os, sys, time, struct, select, glob, traceback, subprocess
+
+# event types (see https://github.com/torvalds/linux/blob/master/include/uapi/linux/input-event-codes.h)
+# only one used for now
+EV_KEY = 0x01
+
+configfile = 'diseven.conf'
+
+
+def change_status(status):
+    # True - change status to enabled
+    # False - change status to disabled
+    if status:
+        subprocess.call(enable_command, shell=True)
+    else:
+        subprocess.call(disable_command, shell=True)
+
+def readevent(fds):
+    try:
+        ps = [os.read(fd, 16) for fd in fds]
+    except OSError:
+        # file descriptor has disappeared - we unplugged the keyboard, resumed from suspend etc...
+        traceback.print_exc()
+        yield None, None, None
+    for p in ps:
+        timeval, suseconds, typ, code, value = struct.unpack( 'llHHI', p[:16])
+        yield typ, value, code
+
+def opendevs(devices):
+    devs = []
+    for dev in glob.glob(devices):
+        try:
+            fd = os.open(dev, os.O_RDONLY)
+        except OSError, exception:
+            traceback.print_exc()
+            continue
+        devs.append(fd)
+    return devs
+
+def closedevs(fds):
+    for fd in fds:
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+
+def run_daemon(fds, timeout, daemon_timeout=60):
+    # listen to events, run only finite time (to reopen device periodically)
+    # return reason why it ended: fd - device disappeared
+    #                             time - exceeded run time
+    timestamp = last_event_time = time.time()
+    status = True # enabled
+    while 1:
+        rs, ws, xs = select.select(fds, [], [], timeout)
+        for t, v, e in readevent(rs):
+            if t is None:
+                return 'fd'
+            if t == EV_KEY and e not in ignore_event_codes:
+                if status:
+                    status = False
+                    change_status(status)
+                last_event_time = time.time()
+        if not status:
+            if time.time()-last_event_time > timeout:
+                status = True
+                change_status(status)
+        if time.time()-timestamp > daemon_timeout:
+            return 'time'
+
+def run_print(fd):
+    while 1:
+        rs, ws, xs = select.select(fds, [], [])
+        for t, v, e in readevent(rs):
+            print "Event type:", t, "value:", v, "code:", e
+
+if not os.path.exists(configfile):
+    print 'No configuration file, create one!'
+    print 'Using default values for now, only printing enabled/disabled status'
+
+    # keyboard device(s) to monitor, you can use glob patterns to monitor more devices
+    devices = '/dev/input/by-id/*kbd'
+
+    # enabke the device if these many seconds passed since the last keyboard event 
+    timeout = 1
+
+    enable_command  = 'echo enabling pointer'
+    disable_command = 'echo disabling pointer'
+
+    # keyboard event codes to ignore (i.e. pressing this keys won't disable the pointer)
+    ignore_event_codes = (
+     29, # KEY_LEFTCTRL
+     42, # KEY_LEFTSHIFT
+     54, # KEY_RIGHTSHIFT
+     a56, # KEY_LEFTALT
+     97, # KEY_RIGHTCTRL
+    100, # KEY_RIGHTALT
+    125, # KEY_LEFTMETA
+    126, # KEY_RIGHTMETA
+    )
+
+if len(sys.argv)==2 and sys.argv[1]=='-l':
+    if os.path.exists(configfile):
+        execfile(configfile)
+    fds = opendevs(devices)
+    run_print(fds) # runs forever or until interrupted
+    sys.exit(1) # just in case
+
+
+daemon_timeout = 4
+
+try:
+    while True:
+        if os.path.exists(configfile):
+            execfile(configfile)
+        fds = opendevs(devices)
+        status = run_daemon(fds, timeout, daemon_timeout)
+        closedevs(fds)
+        print "reopening event devices", status, daemon_timeout
+        if status=='time':
+            # increase restart time, but only up to 16 seconds, to re-read the devices periodically in case the keyboard is plugged in during work
+            daemon_timeout = min(16, daemon_timeout*2)
+        else:
+            daemon_timeout = 2
+        time.sleep(1)
+finally:
+    # e.g. the daemon has been terminated, try to re-enable the pointer if possible
+    change_status(True)
+
