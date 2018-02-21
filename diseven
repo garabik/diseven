@@ -6,7 +6,7 @@ import os, sys, time, struct, select, glob, traceback, subprocess
 # only one used for now
 EV_KEY = 0x01
 
-configfile = 'diseven.conf'
+configfile = '/etc/diseven.conf'
 
 
 def change_status(status):
