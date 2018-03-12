@@ -29,6 +29,6 @@ enable or disable the device (touchpad). For libinput,
 
 You get the `deviceid` from the `xinput list` command. Do not use the number, it might change upon reboot.
 
-Run the diseven program, from the terminal first to see eventual error messages.
+Run the diseven program from the terminal first to see eventual error messages.
  
 
