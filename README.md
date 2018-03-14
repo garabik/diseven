@@ -29,6 +29,17 @@ enable or disable the device (touchpad). For libinput,
 
 You get the `deviceid` from the `xinput list` command. Do not use the number, it might change upon reboot.
 
+For example, my `xinput list` gives:
+
+    Virtual core pointer                    	id=2	[master pointer  (3)]
+        ↳ HS-M962-CS-A3-19-00 USB KEYBOARD        	id=9	[slave  pointer  (2)]
+
+That means my enable and disable commands will be:
+
+    enable_command  = 'xinput set-prop "pointer:HS-M962-CS-A3-19-00 USB KEYBOARD" "Device Enabled" 1' 
+    disable_command = 'xinput set-prop "pointer:HS-M962-CS-A3-19-00 USB KEYBOARD" "Device Enabled" 0'
+
+
 Run the diseven program from the terminal first to see eventual error messages.
  
 
