@@ -12,6 +12,7 @@ configfile = '/etc/diseven.conf'
 def change_status(status):
     # True - change status to enabled
     # False - change status to disabled
+    #print("change status", status)
     if status:
         subprocess.call(enable_command, shell=True)
     else:
@@ -52,6 +53,7 @@ def run_daemon(fds, timeout, daemon_timeout=60):
     #                             time - exceeded run time
     timestamp = last_event_time = time.time()
     status = True # enabled
+    change_status(status)
     while 1:
         rs, ws, xs = select.select(fds, [], [], timeout)
         for t, v, e in readevent(rs):
@@ -93,7 +95,7 @@ if not os.path.exists(configfile):
      29, # KEY_LEFTCTRL
      42, # KEY_LEFTSHIFT
      54, # KEY_RIGHTSHIFT
-     a56, # KEY_LEFTALT
+     56, # KEY_LEFTALT
      97, # KEY_RIGHTCTRL
     100, # KEY_RIGHTALT
     125, # KEY_LEFTMETA
