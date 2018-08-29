@@ -17,7 +17,7 @@ updated/fixed, but it works reasonably well.
 
 ## Installation
 
-Make /dev/input/ readable by you - either by changing the access rights to the devices, or, in modern distributions, make yourself a member of `input` group.
+Make /dev/input/ readable by you - either by changing the access rights to the devices, or, in modern distributions, make yourself a member of `input` group, usually by executing `adduser yourusername input` command as root.
 
 Put `diseven.conf` into /etc, edit it according to your needs.
 
