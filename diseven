@@ -19,14 +19,17 @@ def change_status(status):
         subprocess.call(disable_command, shell=True)
 
 def readevent(fds):
+    fmt = 'llHHI'
+    evsize = struct.calcsize(fmt)
     try:
-        ps = [os.read(fd, 16) for fd in fds]
+        ps = [os.read(fd, evsize) for fd in fds]
     except OSError:
         # file descriptor has disappeared - we unplugged the keyboard, resumed from suspend etc...
         traceback.print_exc()
         yield None, None, None
+
     for p in ps:
-        timeval, suseconds, typ, code, value = struct.unpack( 'llHHI', p[:16])
+        timeval, suseconds, typ, code, value = struct.unpack(fmt, p[:evsize])
         yield typ, value, code
 
 def opendevs(devices):
