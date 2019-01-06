@@ -39,7 +39,7 @@ That means my enable and disable commands will be:
     enable_command  = 'xinput set-prop "pointer:HS-M962-CS-A3-19-00 USB KEYBOARD" "Device Enabled" 1' 
     disable_command = 'xinput set-prop "pointer:HS-M962-CS-A3-19-00 USB KEYBOARD" "Device Enabled" 0'
 
-(Yes, this is really a touchpad, despite the `KEYBOARD` in the name - the touchpd is integrated with the keyboard. Thus we have to add the `pointer:` prefix.)
+(Yes, this is really a touchpad, despite the `KEYBOARD` in the name - the touchpad is integrated with the keyboard. Thus we have to add the `pointer:` prefix.)
 
 Run the diseven program from the terminal first to see eventual error messages.
  
